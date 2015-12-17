@@ -6,6 +6,7 @@ var io = require('socket.io')(http);
 
 // Import our own modules:
 var m_sh = require('./modules/m_socket_handler');
+var m_pregame = require('./modules/m_pregame');
 
 
 
@@ -113,8 +114,22 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 // This is the pregame lobby
 var pregame = io.of('/pregame').on('connection', function(socket) {
 
-	console.log('someone connected to pregame!');
+	// TODO: hostgame and joingame problem - if already joined doesnt need to rejoin
+	socket.on('pregame connect', function(token) {
+		m_sh.verifyToken(lobby, data);
+		m_pregame.connect(pregame, token, socket.id, function(success, room) {
+			if (success) {
+				socket.join(room);
+			}
+		});
+	});
 
+
+	// TODO: manage disconencting users
+	//		Check game from database to see if it has started
+	//		if it hasn't then the user has just left the pregame so remove him from the game
+	//		it if has then the user has been moved into the game lobby
+	//socket.on('disconnect')
 });
 
 http.listen(3000, console.log("Listening on *:3000"));

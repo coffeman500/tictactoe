@@ -123,8 +123,8 @@ exports.createMatch = function(matchTitle, callback) {
 			"players": []
 		}, function(err, result) {
 			if (err) {
-				return callback(false);
 				console.log(err);
+				return callback(false);
 			}
 			else {
 				return callback(true);			
@@ -137,7 +137,42 @@ exports.createMatch = function(matchTitle, callback) {
 
 
 
+// Function to handle join requests for games
+// Variables:
+//		matchTitle: The title of the match to join
+//		playerName: The player who wants to join
+//		callback: function to call when done
+//
+// Callback accepts two arguements, success (false on failure) & message.
+exports.joinGame = function(matchTitle, playerName, callback) {
 
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": matchTitle }, function (err, doc) {
+			if (err)
+				return callback(false, 'Could not connect to database, try again.');
+			else if (!doc)
+				return callback(false, 'Match does not exist.');
+			else if (doc.numPlayers >= 2)
+				return callback(false, 'Match is full.');
+			else {
+				db.collection('games').update({ "_id": matchTitle }, {
+					$inc: { "numPlayers": 1 },
+					$push: { "players": playerName }
+				}, function(err, result) {
+					if (err)
+						return callback(false, 'Could not update database. Try again');
+					else
+						return callback(true);
+				});
+			}
+		});
+
+	});
+
+
+};
 
 
 

@@ -7,7 +7,6 @@ var socket = io();
 //
 // No return, server handles request
 if (localStorage['token']) {
-	console.log(localStorage['token']);
 	$("#notification").html('<p class="success">Welcome back! Sending you to the lobby...</p>');
 	moveClient('/lobby');
 }

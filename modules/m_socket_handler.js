@@ -163,6 +163,7 @@ exports.chat = function(io, data, socket) {
 //		data:
 //			.matchTitle: the game's match title
 //			.token: the user's auth token
+//		socket: the user's socket id
 //		callback: to be called on complete
 //
 // Returns a new token on success, false on failure
@@ -174,6 +175,14 @@ exports.createGame = function(io, data, socket, callback) {
 			io.to(socket).emit('error', 'Oh god... Something went terribly wrong. Try again later.');
 			return callback(false);
 		}
+		
+		// Check the match title
+		var checkTitle = checkMatchTitle(data.matchTitle);
+		if (checkTitle) {
+			io.to(socket).emit('error', checkTitle);
+			return callback(false);
+		}
+
 		// Create a match
 		m_mongo.createMatch(data.matchTitle, function(success) {
 			// If it worked, get the user a new token
@@ -185,11 +194,25 @@ exports.createGame = function(io, data, socket, callback) {
 				});
 			}
 			else {
+				io.to(socket).emit('error', 'Couldn\'t create match, this is usually because the match name is already taken. Try again with a different name.');
 				return callback(false);
 			}
 		});
-		
 	});
+
+	// Function to check if user data is correct
+	function checkMatchTitle(matchTitle) {
+		if (!matchTitle)
+			return 'You gotta enter something, m8.';
+		if (/^[a-zA-Z0-9-s]*$/.test(matchTitle) == false) 
+			return 'Special characters aren\'t allowed in match title';
+		if (matchTitle.length < 3)
+			return 'Match title needs to be at least 3 characters long';
+		if (matchTitle.length > 16)
+			return 'Match title may be no longer than 16 characters';
+		return false;
+	}
+
 };
 
 

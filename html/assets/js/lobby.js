@@ -83,6 +83,8 @@ $(document).on('dblclick', '#games-list ul li', function() {
 // Function to handle hosting a game
 $("#host-game").click(function() {
 	var gameName = prompt("Please enter a match title");
+	if (!gameName)
+		return;
 	socket.emit('host game', {
 		"token": localStorage['token'],
 		"matchTitle": gameName

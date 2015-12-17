@@ -253,3 +253,16 @@ Styles for the lobby page
     cursor: pointer;
 }
 
+/******************
+Styles for the pregame page
+******************/
+
+.pregame-page #top-section .inner-box {
+	border: 1px solid #505050;
+	margin-bottom: 1em;
+	padding: .75em;
+}
+
+.pregame-page #top-section #connected-users, .pregame-page #top-section #chat-box {
+	height: 600px;
+}
