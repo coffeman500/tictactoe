@@ -1,0 +1,207 @@
+/******************
+General Styles
+******************/
+
+body {
+	font-family: arial;
+}
+
+.wrap {
+	max-width: 1030px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+.error {
+    background: #B74545;
+    color: white;
+    padding: .75em;
+}
+
+.success {
+	background: green;
+	color: white;
+	padding: .75em;
+}
+
+h1 {
+	margin: .5em 0;
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.no-flow {
+	overflow: hidden;
+}
+
+/******************
+Grid Styles
+******************/
+
+.col {
+	float: left;
+	padding-right: .75em;
+}
+.last-col {
+	padding-right: 0!important;
+}
+
+.d-1of5 {
+	width: 20%;
+}
+.d-2of5 {
+	width: 40%;
+}
+.d-3of5 {
+	width: 60%;
+}
+.d-4of5 {
+	width: 80%;
+}
+
+
+.d-1of4 {
+	width: 25%;
+}
+.d-3of4 {
+	width: 75%;
+}
+
+
+.d-1of3 {
+	width: 33.33%;
+}
+.d-2of3 {
+	width: 66.66%;
+}
+
+
+.d-1of2 {
+	width: 50%;
+}
+
+
+.d-all {
+	width: 100%;
+}
+
+
+/******************
+Styles for the login page
+******************/
+
+.login-page {
+	text-align: center;
+}
+
+.login-page #login-box {
+	max-width: 300px;
+	margin: 0 auto;
+	background: #E2E2E2;
+	border-radius: 7px;
+	margin-top: 10%;
+	padding: 1em;
+}
+
+
+/******************
+Styles for the registration page
+******************/
+
+.reg-page {
+	text-align: center;
+}
+
+.reg-page #reg-box {
+	max-width: 300px;
+	margin: 0 auto;
+	background: #E2E2E2;
+	border-radius: 7px;
+	margin-top: 10%;
+	padding: 1em;
+}
+
+.reg-page #reg-box #field {
+	max-width: 200px;
+	margin: .75em auto;
+	text-align: left;
+}
+.reg-page #reg-box #field input {
+	width: 100%;
+}
+
+/******************
+Styles for the lobby page
+******************/
+
+.lobby-page #top-section #games-list {}
+
+.lobby-page #top-section .inner-box {
+	border: 1px solid #505050;
+	margin-bottom: 1em;
+	padding: .75em;
+}
+
+.lobby-page #top-section #games-list {
+	padding: 0;
+}
+
+.lobby-page #top-section #games-list h2 {
+	background-color: #505050;
+	margin: 0;
+	padding: .5em 1em;
+	color: white;
+}
+
+.lobby-page #top-section #games-list button {
+	float: right;
+	margin-top: 4px;
+}
+
+.lobby-page #top-section #games {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+	height: 550px;
+	overflow-y: scroll;
+}
+
+.lobby-page #top-section #games li {
+	padding: .5em 1em;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-transition: all .25s linear;
+	-moz-transition: all .25s linear;
+	transition: all .25s linear;
+	cursor: pointer;
+}
+
+.lobby-page #top-section #games li:nth-child(even) {
+	background-color: #F1F0F0;
+}
+
+.lobby-page #top-section #games li:hover {
+	background-color: #A7A7A7;
+	color: white;
+}
+
+.lobby-page #top-section #games li span {
+	float: right;
+}
+
+
+.lobby-page #top-section #account-info {
+}
+
+.lobby-page #top-section #account-info button {
+	float: right;
+}
+

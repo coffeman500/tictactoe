@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Tic Tac Toe Register</title>
+		
+		<link rel="stylesheet" type="text/css" href="/css/styles.css">
+	</head>
+
+	<body>
+		
+		<div id="container" class="wrap reg-page">
+		
+			<div id="reg-box">
+				<h1>Registration:</h1>
+
+				<form id="reg-form" action="">
+					<div id="notification"></div>
+					<p id="field">Username:<br/><input id="username" type="text" /></p>
+					<p id="field">Password:<br/><input id="password" type="password" /></p>
+					<p id="field">Retype Password:<br/><input id="passwordVerify" type="password" /></p>
+					<button>Let's do this!</button>
+				</form>
+				
+				<p>Existing User? You can login <a href="/">here!</a></p>				
+										
+			</div>
+
+		</div>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+		<script src="/js/register.js" type="text/javascript"></script>
+	</body>
+
+
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Tic Tac Toe Lobby</title>
+		
+		<link rel="stylesheet" type="text/css" href="/css/styles.css">
+	</head>
+
+	<body>
+		
+		<div id="container" class="wrap lobby-page">
+		
+			<div id="notification"></div>
+		
+			<div class="no-flow" id="top-section">
+				<div class="col d-2of5">
+					<div id="games-list" class="inner-box">
+						<h2>Open Matches <button id="refresh">Refresh</button></h2>
+						<ul id="games"></ul>
+					</div>
+				</div>
+			
+				<div class="col d-2of5" id="middle">
+					<div class="col d-all last-col">
+						 <div id="game-info" class="inner-box">
+							<p>Selected game info</p>
+						</div>
+					</div>
+					
+					<div class="col d-1of2" id="join-game">
+						<div id="join-game" class="inner-box">
+							<p>Join game button</p>
+						</div>
+					</div>
+					<div class="col d-1of2 last-col" id="host-game">
+						<div id="host-game" class="inner-box">
+							<p>Host game button</p>
+						</div>
+					</div>
+				</div>
+				
+				<div class="col d-1of5 last-col" id="right">
+					<div id="account-info" class="inner-box no-flow">
+						<p>Logged in as:<br/><span id="account-username"></span></p>
+						<p><button id="logout">Logout</button>
+					</div>
+					<div id="users-online" class="inner-box">
+						<h3>Users in the lobby:</h3>
+						<ul id="users"></ul>
+					</div>
+				</div>
+			</div>
+			
+			<div class="no-flow" id="bottom-section">
+				<div id="chat-box">
+					<ul id="messages"></ul>
+					
+					<form id="chat-submit" action="">
+						<input type="text" id="message" /><button>Send</button>
+					</form>					
+				</div>
+			</div>
+
+		</div>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+		<script src="/js/lobby.js" type="text/javascript"></script>
+	</body>
+
+
+</html>
