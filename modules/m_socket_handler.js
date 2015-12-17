@@ -76,6 +76,8 @@ exports.createAccount = function(io, data) {
 			return 'Special characters aren\'t allowed in usernames';
 		if (username.length <= 3)
 			return 'Usernames need to be at least 4 characters long';
+		if (username.length > 16)
+			return 'Username may be no longer than 16 characters';
 		if (password.length <= 4)
 			return 'Passwords need to be at least 5 characters long';
 	}
@@ -96,8 +98,7 @@ exports.createAccount = function(io, data) {
 exports.verifyToken = function(io, data) {
 	// Start by verifying the token
 	jwt.verify(data.token, pKey(), function(err, decoded) {
-	
-		if (err || !(decoded == '"' + data.username + '"')) {
+		if (err || !(decoded.username == data.username)) {
 			console.log(err);
 			io.to(data.socket).emit('validation error', {
 				"msg": 'It seems you don\'t belong here, you should try logging in again.',
@@ -121,6 +122,73 @@ exports.verifyToken = function(io, data) {
 exports.getGames = function(io, socket) {
 	m_mongo.getAllFromDb('games', { "open": true }, function(games) {
 		io.to(socket).emit('get games', games);
+	});
+};
+
+
+
+// This function handles incoming chat messages
+// Two inputs:
+//		io: the public socket to communicate to
+//		data:
+//			.message: the chat message from the client
+//			.token: the client's token for verification
+//			.socket: the client's socket id
+//
+// No return, sends out chat message to clients directly
+exports.chat = function(io, data, socket) {
+	// We'll start by verifying this man's token.
+	jwt.verify(data.token, pKey(), function(err, decoded) {
+		if (err) {
+			console.log(err);
+			io.to(socket).emit('validation error', {
+				"msg": 'We couldn\'t validate your request, sorry brah. Try logging in again.',
+				"url": '/'
+			});
+			return;
+		}
+		// If he passed the true test, we shall allow passage of his message to thine peers.
+		io.emit('chat message', {
+			"user": decoded.username,
+			"message": data.message
+		});
+	});
+};
+
+
+
+// This functions handles requests to create/host matches
+// Variables:
+//		io: the public socket to communicate with
+//		data:
+//			.matchTitle: the game's match title
+//			.token: the user's auth token
+//		callback: to be called on complete
+//
+// Returns a new token on success, false on failure
+exports.createGame = function(io, data, socket, callback) {
+	// Verify le token, as always, don't want no unwanteds issuin commands up in huzzah.
+	jwt.verify(data.token, pKey(), function(err, decoded) {
+		if (err) {
+			console.log(err);
+			io.to(socket).emit('error', 'Oh god... Something went terribly wrong. Try again later.');
+			return callback(false);
+		}
+		// Create a match
+		m_mongo.createMatch(data.matchTitle, function(success) {
+			// If it worked, get the user a new token
+			if (success) {
+				// TODO: Replace this function with the match handler's join function when you write it.
+				decoded.activeGame = data.matchTitle;
+				jwt.sign(decoded, pKey(), { expiresIn: '1 day' }, function(token) {
+					return callback(token);
+				});
+			}
+			else {
+				return callback(false);
+			}
+		});
+		
 	});
 };
 

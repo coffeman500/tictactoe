@@ -23,18 +23,19 @@
 				<div class="col d-2of5" id="middle">
 					<div class="col d-all last-col">
 						 <div id="game-info" class="inner-box">
-							<p>Selected game info</p>
+							<p>Click on a match to see more information</p>
+							<p>Double click a match to join it.</p>
 						</div>
 					</div>
 					
-					<div class="col d-1of2" id="join-game">
+					<div class="col d-1of2">
 						<div id="join-game" class="inner-box">
 							<p>Join game button</p>
 						</div>
 					</div>
-					<div class="col d-1of2 last-col" id="host-game">
+					<div class="col d-1of2 last-col">
 						<div id="host-game" class="inner-box">
-							<p>Host game button</p>
+							<p>Host A Game</p>
 						</div>
 					</div>
 				</div>
@@ -45,7 +46,7 @@
 						<p><button id="logout">Logout</button>
 					</div>
 					<div id="users-online" class="inner-box">
-						<h3>Users in the lobby:</h3>
+						<h3>Users Online:</h3>
 						<ul id="users"></ul>
 					</div>
 				</div>
@@ -53,10 +54,10 @@
 			
 			<div class="no-flow" id="bottom-section">
 				<div id="chat-box">
-					<ul id="messages"></ul>
+					<div id="messages-wrap"><ul id="messages"></ul></div>
 					
 					<form id="chat-submit" action="">
-						<input type="text" id="message" /><button>Send</button>
+						<input type="text" id="message" /><button id="send-message">Send</button>
 					</form>					
 				</div>
 			</div>

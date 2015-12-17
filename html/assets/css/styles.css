@@ -146,11 +146,11 @@ Styles for the lobby page
 	padding: .75em;
 }
 
-.lobby-page #top-section #games-list {
+.lobby-page #top-section #users-online, .lobby-page #top-section #games-list {
 	padding: 0;
 }
 
-.lobby-page #top-section #games-list h2 {
+.lobby-page #top-section #users-online h3, .lobby-page #top-section #games-list h2 {
 	background-color: #505050;
 	margin: 0;
 	padding: .5em 1em;
@@ -162,7 +162,7 @@ Styles for the lobby page
 	margin-top: 4px;
 }
 
-.lobby-page #top-section #games {
+.lobby-page #top-section #users, .lobby-page #top-section #games {
 	list-style-type: none;
 	padding: 0;
 	margin: 0;
@@ -170,7 +170,16 @@ Styles for the lobby page
 	overflow-y: scroll;
 }
 
-.lobby-page #top-section #games li {
+.lobby-page #top-section #games-list #games .clicked {
+	background-color: #6F6F6F;
+	color: white;
+}
+
+.lobby-page #top-section #users {
+	height: 430px;
+}
+
+.lobby-page #top-section #users li, .lobby-page #top-section #games li {
 	padding: .5em 1em;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -184,7 +193,7 @@ Styles for the lobby page
 	cursor: pointer;
 }
 
-.lobby-page #top-section #games li:nth-child(even) {
+.lobby-page #top-section #users li:nth-child(even), .lobby-page #top-section #games li:nth-child(even) {
 	background-color: #F1F0F0;
 }
 
@@ -203,5 +212,44 @@ Styles for the lobby page
 
 .lobby-page #top-section #account-info button {
 	float: right;
+}
+
+.lobby-page #chat-box {}
+.lobby-page #chat-box #messages-wrap {
+	height: 300px;
+	overflow-x: auto;
+	border: 1px solid gray;
+	border-bottom: 0;
+}
+.lobby-page #chat-box #messages {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+.lobby-page #chat-box #messages li{
+	padding: .5em 1em;
+}
+
+.lobby-page #chat-box #messages li:nth-child(even) {
+	background-color: #F1F0F0;
+}
+
+.lobby-page #chat-box input {
+	width: 90%;
+}
+
+.lobby-page #chat-box button {
+	width: 10%;
+}
+
+.lobby-page #top-section #host-game {
+    background: #193F67;
+    text-align: center;
+    color: white;
+    padding: 0;
+    border-radius: 30px;
+    cursor: pointer;
 }
 

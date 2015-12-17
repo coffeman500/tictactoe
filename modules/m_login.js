@@ -29,7 +29,10 @@ module.exports = function(user, pass, callback) {
 		}
 		
 		// Create the token and pass it back
-		jwt.sign(doc.username, pKey(), { expiresIn: '1 day' }, function(token) {
+		jwt.sign({
+			"username": doc.username,
+			"activeGame": null
+		}, pKey(), { expiresIn: '1 day' }, function(token) {
 			return callback(token);
 		});
 	

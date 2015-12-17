@@ -105,6 +105,35 @@ exports.createAccount = function(user, pass, callback) {
 
 
 
+// Function to create a match
+// Variables:
+//		matchTitle: The match title to be created
+//		callback: function to call when finished
+//
+// Returns true on success, false on failure
+exports.createMatch = function(matchTitle, callback) {
+	
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+		
+		db.collection('games').insert({
+			"_id": matchTitle,
+			"open": false,
+			"numPlayers": 0,
+			"players": []
+		}, function(err, result) {
+			if (err) {
+				return callback(false);
+				console.log(err);
+			}
+			else {
+				return callback(true);			
+			}
+		});
+		
+	});
+	
+};
 
 
 

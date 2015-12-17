@@ -28,6 +28,11 @@ app.get('/lobby', function(req, res) {
 	res.sendFile(__dirname + '/html/lobby.html');
 });
 
+// Pregame lobby page
+app.get('/pregame', function(req, res) {
+	res.sendFile(__dirname + '/html/pregame.html');
+});
+
 
 
 // Socket handling
@@ -44,22 +49,22 @@ io.on('connection', function(socket) {
 		m_sh.createAccount(io, data);
 	}); // End account creation handler
 	
-	
 }); // End connection handler
 
 
 // Handles lobby group
 var lobbyUsers = [];
 var lobby = io.of('/lobby').on('connection', function(socket) {
-	console.log('User connected to chat');
 	// Handles token verification from a connecting user
 	socket.on('lobby connect', function(data) {
 		m_sh.verifyToken(lobby, data);
-		
+		// Push the user into the array of connected users
 		lobbyUsers.push({ 
 			"socket": data.socket,
 			"username": data.username		
 		});
+		// Tell everyone else someone joined. Happy happy joy joy.
+		lobby.emit('users change', JSON.stringify(lobbyUsers, ['username']));
 	}); // End token verification handler
 
 	
@@ -69,21 +74,48 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 	}); // End list open games handler
 	
 	
+	// Handles chat messages
+	socket.on('chat message', function(data) {
+		m_sh.chat(lobby, data, socket.id);
+	}); // End chat message handler
+	
+	
+	// Handles game hosting requests
+	socket.on('host game', function(data) {
+		m_sh.createGame(lobby, data, socket.id, function(token) {
+			if (token) {
+				lobby.to(socket.id).emit('hosted ready', {
+					"newToken": token,
+					"url": '/pregame',
+					"msg": 'Your game is ready! Redirecting you now...'
+				});
+			}
+		});
+	});
+	
 	socket.on('disconnect', function() {
 		var removeIndex = null;
 		// Loops through the logged in users list until the disconnected socket is found, then it is removed
 		for (var i = 0; i<lobbyUsers.length; i++) {
-			if (lobbyUsers[i].socket == socket) {
+			if (lobbyUsers[i].socket == socket.id) {
 				removeIndex = i;
 				break;
 			}
 		}
 		lobbyUsers.splice(removeIndex, 1);
-		// TODO: Send connected users back to all clients so they can update users in lobby
+		// Tell everyone else someone joined. Happy happy joy joy.
+		lobby.emit('users change', JSON.stringify(lobbyUsers, ['username']));
 	});
 }); // End lobby connection handler
 
 
+
+// This is the pregame lobby
+var pregame = io.of('/pregame').on('connection', function(socket) {
+
+	console.log('someone connected to pregame!');
+
+});
 
 http.listen(3000, console.log("Listening on *:3000"));
 
