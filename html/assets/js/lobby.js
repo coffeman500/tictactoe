@@ -5,11 +5,7 @@ var socket = io('http://localhost:3000/lobby');
 
 // Handles initial connection, and client token verification
 socket.on('connect', function () {
-	socket.emit('lobby connect', {
-		"token": localStorage['token'],
-		"username": localStorage['username'],
-		"socket": socket.id
-	});
+	socket.emit('lobby connect', localStorage['token']);
 	socket.emit('get games', socket.id); // Load the game list on load
 });
 
@@ -59,17 +55,15 @@ socket.on('get games', function(games) { // Handling data from the server
 
 // Displays the connected users in the lobby
 // Receives one variable from the server:
-//		users: an array of json objects containing user: $username
+//		users: an array containing usernames
 //
 // Loops through array and outputs usernames into the connected users section
 socket.on('users change', function(users) {
 	$("#users").html('');
-	$.each($.parseJSON(users), function(key, val) {
-		$.each(val, function(key2, val2) {
-			$("#users").append($("<li>")
-				.text(val2)
-				.attr("id", "user"));
-		});
+	$.each(users, function(key, val) {
+		$("#users").append($("<li>")
+			.text(val)
+			.attr("id", "user"));
 	});
 });
 

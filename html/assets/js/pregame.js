@@ -9,6 +9,7 @@ socket.on('connect', function() {
 });
 
 
+
 // Handles validation errors from the server due to shitty tokens (fuckin' tokens)
 // Receives the following:
 //		data
@@ -47,7 +48,19 @@ socket.on('join error', function(data) {
 
 
 
-
+// Displays the connected users in the room
+// Receives one variable from the server:
+//		users: an array containing usernames
+//
+// Loops through array and outputs usernames into the connected users section
+socket.on('users change', function(users) {
+	$("#users").html('');
+	$.each(users, function(key, val) {
+		$("#users").append($("<li>")
+			.text(val)
+			.attr("id", "user"));
+	});
+});
 
 
 

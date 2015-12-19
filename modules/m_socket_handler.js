@@ -91,21 +91,22 @@ exports.createAccount = function(io, data) {
 //		io: the socket to send responses to
 //		data: 
 //			.token: user's auth token
-//			.username: pretty self explanatory..
-//			.socket: user's socket, yo.
+//		socket: user's socket, yo.
 //
 // Retruns true on successful verification Sends error message to client on fail
-exports.verifyToken = function(io, data) {
+exports.verifyToken = function(io, token, socket, callback) {
 	// Start by verifying the token
-	jwt.verify(data.token, pKey(), function(err, decoded) {
-		if (err || !(decoded.username == data.username)) {
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
 			console.log(err);
-			io.to(data.socket).emit('validation error', {
+			io.to(socket).emit('validation error', {
 				"msg": 'It seems you don\'t belong here, you should try logging in again.',
 				"url": '/'
 			});
+			return false;
 		} else {
-			return true;
+
+			return callback(decoded.username, decoded.activeGame);
 		}
 			
 	});
@@ -124,6 +125,18 @@ exports.getGames = function(io, socket) {
 		io.to(socket).emit('get games', games);
 	});
 };
+
+
+// Function to handle broadcasting games
+// Variable:
+//		io: the io to broadcast to
+//
+// No return, just sends games out, yo.
+exports.sendGames = function(io) {
+	m_mongo.getAllFromDb('games', { "open": true }, function(games) {
+		io.emit('get games', games);
+	});
+}
 
 
 

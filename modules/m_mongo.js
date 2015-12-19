@@ -156,6 +156,8 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 				return callback(false, 'Match does not exist.');
 			else if (doc.numPlayers >= 2)
 				return callback(false, 'Match is full.');
+			else if (doc.players.indexOf(playerName) >= 0)
+				return callback(true);
 			else {
 				db.collection('games').update({ "_id": matchTitle }, {
 					$inc: { "numPlayers": 1 },

@@ -7,6 +7,7 @@ var io = require('socket.io')(http);
 // Import our own modules:
 var m_sh = require('./modules/m_socket_handler');
 var m_pregame = require('./modules/m_pregame');
+var m_users = require('./modules/m_users');
 
 
 
@@ -38,10 +39,12 @@ app.get('/pregame', function(req, res) {
 
 // Socket handling
 io.on('connection', function(socket) {
-
 	// Controls login attempts
 	socket.on('login', function(data) {
-		m_sh.login(io, data);
+		if (!m_users.isConnected(data.username))
+			m_sh.login(io, data);
+		else 
+			io.to(data.socket).emit('error', 'It seems you\'re already connected..');
 	}); // End login handler	
 	
 	
@@ -50,22 +53,23 @@ io.on('connection', function(socket) {
 		m_sh.createAccount(io, data);
 	}); // End account creation handler
 	
+	socket.on('disconnect', function() {
+		m_users.removeConnUser(socket.id);
+	});
 }); // End connection handler
 
 
-// Handles lobby group
-var lobbyUsers = [];
+
+// Lobby room
 var lobby = io.of('/lobby').on('connection', function(socket) {
+
 	// Handles token verification from a connecting user
-	socket.on('lobby connect', function(data) {
-		m_sh.verifyToken(lobby, data);
-		// Push the user into the array of connected users
-		lobbyUsers.push({ 
-			"socket": data.socket,
-			"username": data.username		
+	socket.on('lobby connect', function(token) {
+		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
+			// TODO: If active game isn't null, then redirect user to the game lobby
+			m_users.addConnUser(username, socket.id);
+			lobby.emit('users change', m_users.getUsers(lobby));
 		});
-		// Tell everyone else someone joined. Happy happy joy joy.
-		lobby.emit('users change', JSON.stringify(lobbyUsers, ['username']));
 	}); // End token verification handler
 
 	
@@ -94,18 +98,11 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 		});
 	});
 	
+	// TODO: Join functionality from the lobby page
+
 	socket.on('disconnect', function() {
-		var removeIndex = null;
-		// Loops through the logged in users list until the disconnected socket is found, then it is removed
-		for (var i = 0; i<lobbyUsers.length; i++) {
-			if (lobbyUsers[i].socket == socket.id) {
-				removeIndex = i;
-				break;
-			}
-		}
-		lobbyUsers.splice(removeIndex, 1);
-		// Tell everyone else someone joined. Happy happy joy joy.
-		lobby.emit('users change', JSON.stringify(lobbyUsers, ['username']));
+		// Tell everyone else someone left. Sad sad tears tears.
+		lobby.emit('users change', m_users.getUsers(lobby));
 	});
 }); // End lobby connection handler
 
@@ -114,22 +111,29 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 // This is the pregame lobby
 var pregame = io.of('/pregame').on('connection', function(socket) {
 
-	// TODO: hostgame and joingame problem - if already joined doesnt need to rejoin
+	// Handles pregame connection
 	socket.on('pregame connect', function(token) {
-		m_sh.verifyToken(lobby, data);
-		m_pregame.connect(pregame, token, socket.id, function(success, room) {
-			if (success) {
-				socket.join(room);
-			}
+		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
+			m_users.addConnUser(username, socket.id);
+			// Send em off to the room they belong in
+			m_pregame.connect(pregame, username, activeGame, socket.id, function(success, room) {
+				if (success) {
+					socket.join(room);
+					pregame.to(room).emit('users change', m_users.getUsers(pregame, room));
+				}
+			});
 		});
 	});
 
+	// TODO: Finish handling loading content on the pregame page
 
 	// TODO: manage disconencting users
 	//		Check game from database to see if it has started
 	//		if it hasn't then the user has just left the pregame so remove him from the game
 	//		it if has then the user has been moved into the game lobby
-	//socket.on('disconnect')
+	socket.on('disconnect', function() {
+
+	});
 });
 
 http.listen(3000, console.log("Listening on *:3000"));

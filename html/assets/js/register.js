@@ -1,6 +1,17 @@
 // IO Variable, yay!
 var socket = io();
 
+
+// Handles the user if they already have a token
+// No input, just moves the browser
+//
+// No return, server handles request
+if (localStorage['token']) {
+	$("#notification").html('<p class="success">Welcome back! Sending you to the lobby...</p>');
+	moveClient('/lobby');
+}
+
+
 // Handes errors. Noone likes erroes :(
 // Takes a single variable:
 //		data: A string containing error details
@@ -9,7 +20,6 @@ var socket = io();
 socket.on('error', function(data) {
 		$("#notification").html('<p class="error">' + data + '</p>');
 });
-
 
 
 // Handles the successful account creation response

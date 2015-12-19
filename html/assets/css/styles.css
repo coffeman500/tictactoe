@@ -48,6 +48,7 @@ Grid Styles
 }
 .last-col {
 	padding-right: 0!important;
+	float: right!important;
 }
 
 .d-1of5 {
@@ -150,7 +151,7 @@ Styles for the lobby page
 	padding: 0;
 }
 
-.lobby-page #top-section #users-online h3, .lobby-page #top-section #games-list h2 {
+.lobby-page #top-section #users-online h3, .lobby-page #top-section #games-list h2, .pregame-page #top-section #connected-users h3 {
 	background-color: #505050;
 	margin: 0;
 	padding: .5em 1em;
@@ -162,7 +163,7 @@ Styles for the lobby page
 	margin-top: 4px;
 }
 
-.lobby-page #top-section #users, .lobby-page #top-section #games {
+.lobby-page #top-section #users, .lobby-page #top-section #games, .pregame-page #top-section #users {
 	list-style-type: none;
 	padding: 0;
 	margin: 0;
@@ -179,7 +180,7 @@ Styles for the lobby page
 	height: 430px;
 }
 
-.lobby-page #top-section #users li, .lobby-page #top-section #games li {
+.lobby-page #top-section #users li, .lobby-page #top-section #games li, .pregame-page #top-section #users li {
 	padding: .5em 1em;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -193,7 +194,7 @@ Styles for the lobby page
 	cursor: pointer;
 }
 
-.lobby-page #top-section #users li:nth-child(even), .lobby-page #top-section #games li:nth-child(even) {
+.lobby-page #top-section #users li:nth-child(even), .lobby-page #top-section #games li:nth-child(even), .pregame-page #top-section #users li:nth-child(even) {
 	background-color: #F1F0F0;
 }
 
@@ -263,6 +264,6 @@ Styles for the pregame page
 	padding: .75em;
 }
 
-.pregame-page #top-section #connected-users, .pregame-page #top-section #chat-box {
-	height: 600px;
+.pregame-page #top-section #connected-users {
+	padding: 0;
 }
