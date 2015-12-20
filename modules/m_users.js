@@ -72,8 +72,11 @@ exports.getUser = function (socket) {
 			break;
 		}
 	}
+	//console.log(connUsers[returnIndex]);
 	if (connUsers[returnIndex])
 		return connUsers[returnIndex].username;
+	else
+		return false;
 }
 
 

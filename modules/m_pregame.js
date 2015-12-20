@@ -52,6 +52,65 @@ exports.connect = function(io, username, activeGame, socket, callback) {
 
 
 
+exports.getReadyPlayers = function(game, callback) {
+	m_mongo.returnFromDb('games', { "_id": game }, function(doc) {
+		if (doc != null) {
+			return callback(doc.pReady);
+		}
+		else {
+			return callback(false);
+		}
+	});
+};
+
+
+
+// Function to ready a player in a match
+// Variables:
+// 		io: the io to emit on
+//		socket: the client's socket
+//		token:
+//			.username: the client's username
+//			.activeGame: the client's active (and current) game
+//
+// No return, communicates with client directly
+exports.readyPlayer = function(io, socket, token, callback) {
+	// As always, verify a motherfucker.
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Your session token is invalid, try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			m_mongo.setReady(decoded.username, decoded.activeGame, function(success, msg) {
+				callback(success, msg, decoded.activeGame);
+			});
+		}
+	});
+};
+
+
+
+exports.unreadyPlayer = function(io, socket, token, callback) {
+	// Dat verification, yo.
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Your session token is invalid, try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			m_mongo.unsetReady(decoded.username, decoded.activeGame, function(success, msg) {
+				callback(success, msg, decoded.activeGame);
+			});
+		}
+	});
+};
+
+
 // Function to remove a user from a game
 exports.disconnect = function() {
 	// Need to check if the game has started or not.

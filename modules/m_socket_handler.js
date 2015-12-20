@@ -146,7 +146,7 @@ exports.sendGames = function(io) {
 //		data:
 //			.message: the chat message from the client
 //			.token: the client's token for verification
-//			.socket: the client's socket id
+//		socket: the client's socket id
 //
 // No return, sends out chat message to clients directly
 exports.chat = function(io, data, socket) {
@@ -161,10 +161,18 @@ exports.chat = function(io, data, socket) {
 			return;
 		}
 		// If he passed the true test, we shall allow passage of his message to thine peers.
-		io.emit('chat message', {
-			"user": decoded.username,
-			"message": data.message
-		});
+		if (decoded.activeGame != null) {
+			io.to(decoded.activeGame).emit('chat message', {
+				"user": decoded.username,
+				"message": data.message
+			});
+		}
+		else {
+			io.emit('chat message', {
+				"user": decoded.username,
+				"message": data.message
+			});
+		}
 	});
 };
 

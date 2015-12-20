@@ -28,6 +28,9 @@ socket.on('validation error', function(data) {
 // Handles errors sent by the server
 socket.on('error', function(data) {
 	$("#notification").html('<p class="error">' + data.msg + '</p>');
+	window.setTimeout(function() {
+		$("#notification").html('');
+	}, 5000);
 });
 
 
@@ -58,11 +61,69 @@ socket.on('users change', function(users) {
 	$.each(users, function(key, val) {
 		$("#users").append($("<li>")
 			.text(val)
-			.attr("id", "user"));
+			.attr("id", val)
+			.append($("<span>")
+				.addClass('ready-icon')
+				.css('display', 'none')));
 	});
 });
 
 
+// Handles sending chat messages
+$("#send-message").click(function(event) {
+	event.preventDefault();
+	var msg = $("#message").val();
+	$("#message").val('');
+	socket.emit('chat message', {
+		"message": msg,
+		"token": localStorage['token']
+	});
+});
+
+
+// Handles chat messages sent from the server
+// Variables:
+//		data:
+//			.user: the user who sent the message
+//			.message: the message from the user
+//
+// No return, updates chat box accordingly
+socket.on('chat message', function(data) {
+	$("#messages").append($("<li>").text(data.user + ": " + data.message));
+	$("#messages-wrap").scrollTop($("#messages").height());
+});
+
+
+// Handles retrieval of ready player list
+socket.on('ready change', function(players) {
+	$.each($(".ready-icon"), function(key, val) {
+		if (players.indexOf($(val).parent().attr('id')) != -1) {
+			$(val).css('display', 'block');
+		}
+		else {
+			$(val).css('display', 'none');
+		}
+	});
+});
+
+// Handles the ready button
+$("#ready-button").click(function() {
+	if ($(this).attr('ready') == 'false') {
+		$(this).attr('ready', 'true');
+		$(this).removeClass('not-ready').addClass('ready');
+		socket.emit('ready player', localStorage['token']);
+	}
+	else {
+		$(this).attr('ready', 'false');
+		$(this).removeClass('ready').addClass('not-ready');
+		socket.emit('unready player', localStorage['token']);
+	}
+});
+
+
+$("#notification").click(function() {
+	$(this).html('');
+});
 
 // Handles redirections
 function moveClient(url) {

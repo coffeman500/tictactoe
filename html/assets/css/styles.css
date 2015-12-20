@@ -4,6 +4,18 @@ General Styles
 
 body {
 	font-family: arial;
+	position: relative;
+}
+
+#notification {
+	position: fixed;
+	z-index: 99;
+	right: 20px;
+	top: 20px;
+	max-width: 300px;
+}
+#notification p {
+	margin: 0;
 }
 
 .wrap {
@@ -216,32 +228,32 @@ Styles for the lobby page
 }
 
 .lobby-page #chat-box {}
-.lobby-page #chat-box #messages-wrap {
+.lobby-page #chat-box #messages-wrap, .pregame-page #chat-box #messages-wrap {
 	height: 300px;
 	overflow-x: auto;
 	border: 1px solid gray;
 	border-bottom: 0;
 }
-.lobby-page #chat-box #messages {
+.lobby-page #chat-box #messages, .pregame-page #chat-box #messages {
 	width: 100%;
 	margin: 0;
 	padding: 0;
 	list-style-type: none;
 }
 
-.lobby-page #chat-box #messages li{
+.lobby-page #chat-box #messages li, .pregame-page #chat-box #messages li {
 	padding: .5em 1em;
 }
 
-.lobby-page #chat-box #messages li:nth-child(even) {
+.lobby-page #chat-box #messages li:nth-child(even), .pregame-page #chat-box #messages li:nth-child(even) {
 	background-color: #F1F0F0;
 }
 
-.lobby-page #chat-box input {
+.lobby-page #chat-box input, .pregame-page #chat-box input {
 	width: 90%;
 }
 
-.lobby-page #chat-box button {
+.lobby-page #chat-box button, .pregame-page #chat-box button {
 	width: 10%;
 }
 
@@ -266,4 +278,27 @@ Styles for the pregame page
 
 .pregame-page #top-section #connected-users {
 	padding: 0;
+}
+
+.pregame-page #top-section #connected-users li .ready-icon {
+	float: right;
+	background-color: green;
+	width: 15px;
+    height: 15px;
+    border-radius: 15px;
+    vertical-align: middle;
+}
+
+.pregame-page #top-section #chat-box #messages-wrap {
+	height: 572px;
+}
+
+.pregame-page #ready-button {
+	text-align: center;
+    padding: .75em .5em;
+    background-color: green;
+    border-radius: 10px;
+    color: white;
+    margin-bottom: .5em;
+    cursor: pointer;
 }

@@ -21,13 +21,19 @@
 				</div>
 
 				<div class="col d-4of5 last-col">
-					<div id="chat-box" class="inner-box"><p>Chat Box</p></div>
+					<div id="chat-box">
+						<div id="messages-wrap"><ul id="messages"></ul></div>
+						
+						<form id="chat-submit" action="">
+							<input type="text" id="message" autocomplete="off" /><button id="send-message">Send</button>
+						</form>					
+					</div>
 				</div>
 			</div>
 
 			<div class="no-flow" id="bottom-section">
 				<div class="col d-1of5">
-					<div id="ready-button">Ready button</div>
+					<div id="ready-button" class="not-ready" ready="false">Ready</div>
 				</div>
 
 				<div class="col d-2of5">

@@ -120,7 +120,9 @@ exports.createMatch = function(matchTitle, callback) {
 			"_id": matchTitle,
 			"open": false,
 			"numPlayers": 0,
-			"players": []
+			"players": [],
+			"pReady": [],
+			"pMax": 2
 		}, function(err, result) {
 			if (err) {
 				console.log(err);
@@ -154,9 +156,9 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 				return callback(false, 'Could not connect to database, try again.');
 			else if (!doc)
 				return callback(false, 'Match does not exist.');
-			else if (doc.numPlayers >= 2)
+			else if (doc.numPlayers >= doc.pMax)
 				return callback(false, 'Match is full.');
-			else if (doc.players.indexOf(playerName) >= 0)
+			else if (doc.players.indexOf(playerName) != -1)
 				return callback(true);
 			else {
 				db.collection('games').update({ "_id": matchTitle }, {
@@ -178,6 +180,78 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 
 
 
+// Function to set a player as ready
+// Variables:
+//		username: the user's username, ofc
+//		game: the player's active game
+//		callback: function to callback to
+//
+// Returns callback, which supports two arguments. success (false on failure), and message.
+exports.setReady = function(username, game, callback) {
+
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": game }, function(err, doc) {
+			// Make sure they ain't fakin', then add them to the db
+			if (err || !doc) {
+				return callback(false, 'Could not connect to db.. Try refreshing the page');
+			}
+			else if (doc.pReady.indexOf(username) != -1) {
+				// return callback(false, 'You\'re already ready.');
+			}
+			else {
+				// Add them suckers.
+				db.collection('games').update({ "_id": game }, {
+					$push: { "pReady": username }
+				}, function(err, result) {
+					if (err)
+						return callback(false, 'Could not update database. Try again');
+					else
+						return callback(true);
+				});
+			}
+		});
+	});
+};
 
 
 
+// Function to unready a player
+// Variables:
+//		username: the user's username, ofc
+//		game: the player's active game
+//		callback: function to callback to
+//
+// Returns callback, which supports two arguments. success (false on failure), and message.
+exports.unsetReady = function(username, game, callback) {
+
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": game }, function(err, doc) {
+			// Make sure they ain't fakin', then add them to the db
+			if (err || !doc) {
+				return callback(false, 'Could not connect to db.. Try refreshing the page');
+			}
+			else if (doc.pReady.indexOf(username) == -1) {
+				return callback(false, 'You\'re already not ready.');
+			}
+			else {
+				// Add them suckers.
+				db.collection('games').update({ "_id": game }, {
+					$pull: { "pReady": username }
+				}, function(err, result) {
+					if (err)
+						return callback(false, 'Could not update database. Try again');
+					else
+						return callback(true);
+				});
+			}
+		});
+	});
+};
+
+// TODO: Handle leave button press from clients
+// Only way they can leave is by pressing le button
+// Make sure to take them off the ready list if they're on it and leave.

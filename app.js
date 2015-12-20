@@ -66,9 +66,17 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 	// Handles token verification from a connecting user
 	socket.on('lobby connect', function(token) {
 		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
-			// TODO: If active game isn't null, then redirect user to the game lobby
-			m_users.addConnUser(username, socket.id);
-			lobby.emit('users change', m_users.getUsers(lobby));
+			if (!m_users.isConnected(username)) {
+				// TODO: If active game isn't null, then redirect user to the game lobby
+				m_users.addConnUser(username, socket.id);
+				lobby.emit('users change', m_users.getUsers(lobby));
+			}
+			else {
+				lobby.to(socket.id).emit('validation error', { 
+					"msg": 'It seems you\'re already logged in..',
+					"url": '/'
+				});
+			}
 		});
 	}); // End token verification handler
 
@@ -114,14 +122,79 @@ var pregame = io.of('/pregame').on('connection', function(socket) {
 	// Handles pregame connection
 	socket.on('pregame connect', function(token) {
 		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
-			m_users.addConnUser(username, socket.id);
-			// Send em off to the room they belong in
-			m_pregame.connect(pregame, username, activeGame, socket.id, function(success, room) {
-				if (success) {
-					socket.join(room);
-					pregame.to(room).emit('users change', m_users.getUsers(pregame, room));
-				}
-			});
+			if (!m_users.isConnected(username)) {
+				m_users.addConnUser(username, socket.id);
+				// Send em off to the room they belong in
+				m_pregame.connect(pregame, username, activeGame, socket.id, function(success, room) {
+					if (success) {
+						socket.join(room);
+						// Send out connected users list
+						pregame.to(room).emit('users change', m_users.getUsers(pregame, room));
+						// Send out ready users list
+						m_pregame.getReadyPlayers(room, function(players) {
+							pregame.to(room).emit('ready change', players);
+						});
+					}
+				});
+			}
+			else {
+				pregame.to(socket.id).emit('validation error', { 
+					"msg": 'It seems you\'re already logged in..',
+					"url": '/'
+				});
+			}
+		});
+	}); // End connection handler
+
+
+	// Handles chat messages
+	socket.on('chat message', function(data) {
+		m_sh.chat(pregame, data, socket.id);
+	}); // End chat message handler
+
+
+	// Handles ready requests
+	socket.on('ready player', function(token) {
+		m_pregame.readyPlayer(pregame, socket.id, token, function(success, msg, activeGame) {
+			if (success) {
+				m_pregame.getReadyPlayers(activeGame, function(players) {
+					pregame.to(activeGame).emit('ready change', players);
+				});
+			}
+			else {
+				pregame.to(socket.id).emit('error', { "msg": msg });
+			}
+		});
+	}); // End ready handler
+
+
+	// Handles unready requests
+	socket.on('unready player', function(token) {
+		m_pregame.unreadyPlayer(pregame, socket.id, token, function(success, msg, activeGame) {
+			if (success) {
+				m_pregame.getReadyPlayers(activeGame, function(players) {
+					pregame.to(activeGame).emit('ready change', players);
+				});
+			}
+			else {
+				pregame.to(socket.id).emit('error', { "msg": msg });
+			}
+		});
+	});
+
+
+	// Handles returning the list of ready players
+	socket.on('get readys', function(token) {
+		jwt.verify(token, pKey(), function(err, decoded) {
+			if (err) {
+				lobby.to(socket).emit('validation error', {
+					"msg": 'Your session token is invalid, try logging in again.',
+					"url": '/'
+				});
+			}
+			else {
+				pregame.to(socket.id).emit('ready change', m_pregame.getReadyPlayers(decoded.activeGame));
+			}
 		});
 	});
 
@@ -137,17 +210,3 @@ var pregame = io.of('/pregame').on('connection', function(socket) {
 });
 
 http.listen(3000, console.log("Listening on *:3000"));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
