@@ -111,13 +111,14 @@ exports.createAccount = function(user, pass, callback) {
 //		callback: function to call when finished
 //
 // Returns true on success, false on failure
-exports.createMatch = function(matchTitle, callback) {
+exports.createMatch = function(matchTitle, host, callback) {
 	
 	MongoClient.connect(url, function(err, db) {
 		assert.equal(null, err);
 		
 		db.collection('games').insert({
 			"_id": matchTitle,
+			"host": host,
 			"open": false,
 			"numPlayers": 0,
 			"players": [],
@@ -156,10 +157,10 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 				return callback(false, 'Could not connect to database, try again.');
 			else if (!doc)
 				return callback(false, 'Match does not exist.');
-			else if (doc.numPlayers >= doc.pMax)
-				return callback(false, 'Match is full.');
 			else if (doc.players.indexOf(playerName) != -1)
 				return callback(true);
+			else if (doc.numPlayers >= doc.pMax)
+				return callback(false, 'Match is full.');
 			else {
 				db.collection('games').update({ "_id": matchTitle }, {
 					$inc: { "numPlayers": 1 },
@@ -175,6 +176,49 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 
 	});
 
+};
+
+
+
+// Function to remove user from a game
+// Variables:
+//		matchTitle: the game's title
+//		playerName: the player's name
+//		callback: calls on complete
+//
+// Passes success, msg through the callback when completed
+exports.removeFromGame = function(matchTitle, playerName, callback) {
+
+	MongoClient.connect(url, function(err,db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": matchTitle }, function(err, doc) {
+			if (err || !doc)
+				return callback(false, 'Could not connect to database, try again.');
+			else if (doc.players.indexOf(playerName) == -1)
+				return callback(false, 'YOU DON\'T EVEN GO HERE.');
+			else {
+				// Remove some bitches from the database
+				db.collection('games').update({ "_id": matchTitle }, {
+					$inc: { "numPlayers": -1 },
+					$pull: { "players": playerName }
+				}, function(err, result) {
+					if (err) {
+						return callback(false, 'Could not update database. Try again');
+					}
+					else {
+						// If there aren't any other players in the game, just delete that shit
+						if ((doc.numPlayers - 1) == 0) {
+							db.collection('games').remove({
+								"_id": matchTitle
+							});
+						}
+						return callback(true);
+					}
+				});
+			}
+		});
+	});
 
 };
 
@@ -251,6 +295,42 @@ exports.unsetReady = function(username, game, callback) {
 		});
 	});
 };
+
+
+
+// Function to toggle a match's open status
+// Variables:
+//		game: the game to toggle
+//		user: the username of the user making the toggle request
+//		callback: function to call when done
+//
+// When done will do callback function providing the following: (success, msg) *msg is error message on failure, new toggle status on success
+exports.toggleOpen = function(game, user, callback) {
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": game }, function(err, doc) {
+			if (err || !doc) {
+				return callback(false, 'Could not connect to db.. Try refreshing the page');
+			}
+			else if (user != doc.host) {
+				return callback(false, 'Only the host can toggle a match\'s open status.');
+			}
+			else {
+				db.collection('games').update({ "_id": game }, {
+					$set: { "open": (!doc.open) }
+				}, function(err, result) {
+					if (err)
+						return callback(false, 'Could not update database. Try again');
+					else
+						return callback(true, (!doc.open));
+				});
+			}
+		})
+	});
+
+};
+
 
 // TODO: Handle leave button press from clients
 // Only way they can leave is by pressing le button

@@ -25,13 +25,22 @@ socket.on('validation error', function(data) {
 });
 
 
+// Handles redirection orders from server
+socket.on('redirect', function(url) {
+	moveClient(url);
+});
+
+
 // Handes errors. Noone likes erroes :(
 // Receives a single variable:
 //		data: A string containing error details
 //
 // No return, puts data contents in notification area
 socket.on('error', function(data) {
-	$("#notification").html('<p class="error">' + data + '</p>');
+	$("#notification").html('<p class="error">' + data.msg + '</p>');
+	window.setTimeout(function() {
+		$("#notification").html('');
+	}, 5000);
 });
 
 
@@ -70,7 +79,10 @@ socket.on('users change', function(users) {
 
 // Function to handle joining a game
 $(document).on('dblclick', '#games-list ul li', function() {
-	// TODO: Handle game join function
+	socket.emit('join game', {
+		"token": localStorage['token'],
+		"matchTitle": $(this).attr('val')
+	});
 });
 
 
@@ -98,6 +110,21 @@ socket.on('hosted ready', function(data) {
 	localStorage['token'] = data.newToken;
 	$("#notification").html('<p class="success">' + data.msg + '</p>');
 	moveClient(data.url);	
+});
+
+
+// Handles joining games
+// Vairables:
+//		data:
+//			.newToken: new auth token
+//			.url: url to direct browser to
+//			.msg: notification to display to user
+//
+// No reuturn, handles output itself
+socket.on('join game', function(data) {
+	localStorage['token'] = data.newToken;
+	$("#notification").html('<p class="success">' + data.msg + '</p>');
+	moveClient(data.url);
 });
 
 
@@ -151,6 +178,10 @@ function moveClient(url) {
 // Page handling functions:
 $(document).ready(function() {
 	$("#account-username").html(localStorage['username']);
+});
+
+$("#notification").click(function() {
+	$(this).html('');
 });
 
 // Logout function - fires when logout is pressed

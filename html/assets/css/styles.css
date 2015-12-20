@@ -13,6 +13,7 @@ body {
 	right: 20px;
 	top: 20px;
 	max-width: 300px;
+	cursor: pointer;
 }
 #notification p {
 	margin: 0;
@@ -293,7 +294,7 @@ Styles for the pregame page
 	height: 572px;
 }
 
-.pregame-page #ready-button {
+.pregame-page #ready-button, .pregame-page #toggle-open, .pregame-page #leave-button {
 	text-align: center;
     padding: .75em .5em;
     background-color: green;
@@ -301,4 +302,12 @@ Styles for the pregame page
     color: white;
     margin-bottom: .5em;
     cursor: pointer;
+}
+
+.pregame-page #toggle-open {
+	background-color: #315431;
+}
+
+.pregame-page #leave-button {
+	background-color: #650000;
 }

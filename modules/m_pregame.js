@@ -2,6 +2,7 @@
 // Gonna need a few of these modules
 var m_login = require('./m_login');
 var m_mongo = require('./m_mongo');
+var m_sh = require('./m_socket_handler');
 var jwt = require('jsonwebtoken');
 var pKey = require('./m_key.js');
 
@@ -52,6 +53,12 @@ exports.connect = function(io, username, activeGame, socket, callback) {
 
 
 
+// Returns an array of players who are ready in a pregame lobby
+// Variables:
+//		game: the game name
+//		callback: function to callback when finished
+//
+// Returns a callback containing either the data or false (on failure)
 exports.getReadyPlayers = function(game, callback) {
 	m_mongo.returnFromDb('games', { "_id": game }, function(doc) {
 		if (doc != null) {
@@ -72,8 +79,9 @@ exports.getReadyPlayers = function(game, callback) {
 //		token:
 //			.username: the client's username
 //			.activeGame: the client's active (and current) game
+//		callback: function to call when finished
 //
-// No return, communicates with client directly
+// Callback function called with the following params: success, message, activeGame
 exports.readyPlayer = function(io, socket, token, callback) {
 	// As always, verify a motherfucker.
 	jwt.verify(token, pKey(), function(err, decoded) {
@@ -93,6 +101,16 @@ exports.readyPlayer = function(io, socket, token, callback) {
 
 
 
+// Function to unready a player - This function is completely worthless and I should have saved space by making this a single toggle function
+// Variables:
+// 		io: the io to emit on
+//		socket: the client's socket
+//		token:
+//			.username: the client's username
+//			.activeGame: the client's active (and current) game
+//		callback: function to call when finished
+//
+// Callback function called with the following params: success, message, activeGame
 exports.unreadyPlayer = function(io, socket, token, callback) {
 	// Dat verification, yo.
 	jwt.verify(token, pKey(), function(err, decoded) {
@@ -111,8 +129,81 @@ exports.unreadyPlayer = function(io, socket, token, callback) {
 };
 
 
-// Function to remove a user from a game
-exports.disconnect = function() {
-	// Need to check if the game has started or not.
-	// If the game hasn't started then 
+
+// Toggles a match open or closed
+// Variables:
+//		io: the pregame io to emit to
+//		socket: the user's socket
+//		token: the user's token
+//		lobby: used to emit that a game has been open or closed
+//
+// No return, handles client directly.
+exports.toggleMatchOpen = function(io, socket, token, lobby) {
+	// Ain't gettin through without a verify.
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Your session token is invalid. Try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			m_mongo.toggleOpen(decoded.activeGame, decoded.username, function(success, msg) {
+				if (success) {
+					io.to(socket).emit('open status', msg);
+					m_sh.getGames(lobby);
+				}
+				else {
+					io.to(socket).emit('error', { "msg": msg });
+				}
+			});
+		}
+	});
+};
+
+
+
+// Function to handle leaving a pregame lobby
+// Variables:
+//		io: the pregame io to emit to
+//		socket: the user's socket
+//		token: the user's token
+//		lobby: the lobby io to emit game changes to
+//
+// No return, handles client directly
+exports.leaveGame = function(io, socket, token, lobby) {
+	// Verify some shiznit
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Your session token is invalid. Try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			// Remove them from the game. Scrubz - amirite?
+			m_mongo.removeFromGame(decoded.activeGame, decoded.username, function(success, msg) {
+				if (success) {
+					// if done right, send the user a new token and redirect him
+					var room = decoded.activeGame;
+					decoded.activeGame = null;
+					jwt.sign(decoded, pKey(), { "expiresIn": "1 day" }, function(newToken) {
+						io.to(socket).emit('leave game', {
+							"newToken": newToken,
+							"msg": 'Redirecting you back to the lobby, you quitter.',
+							"url": '/lobby'
+						});
+						io.to(room).emit('user left', decoded.username);
+						m_sh.getGames(lobby);
+						return;
+					});
+				}
+				else {
+					// If shit hits the fan, let the user know.
+					io.to(socket).emit('error', { "msg": msg });
+					return;
+				}
+			});
+		}
+	});
 }

@@ -122,7 +122,10 @@ exports.verifyToken = function(io, token, socket, callback) {
 // Sends list of open games back to client in json format
 exports.getGames = function(io, socket) {
 	m_mongo.getAllFromDb('games', { "open": true }, function(games) {
-		io.to(socket).emit('get games', games);
+		if (socket) 
+			io.to(socket).emit('get games', games);
+		else
+			io.emit('get games', games);
 	});
 };
 
@@ -193,29 +196,28 @@ exports.createGame = function(io, data, socket, callback) {
 	jwt.verify(data.token, pKey(), function(err, decoded) {
 		if (err) {
 			console.log(err);
-			io.to(socket).emit('error', 'Oh god... Something went terribly wrong. Try again later.');
+			io.to(socket).emit('error', { "msg": 'Oh god... Something went terribly wrong. Try again later.' });
 			return callback(false);
 		}
 		
 		// Check the match title
 		var checkTitle = checkMatchTitle(data.matchTitle);
 		if (checkTitle) {
-			io.to(socket).emit('error', checkTitle);
+			io.to(socket).emit('error', { "msg": checkTitle });
 			return callback(false);
 		}
 
 		// Create a match
-		m_mongo.createMatch(data.matchTitle, function(success) {
+		m_mongo.createMatch(data.matchTitle, decoded.username, function(success) {
 			// If it worked, get the user a new token
 			if (success) {
-				// TODO: Replace this function with the match handler's join function when you write it.
 				decoded.activeGame = data.matchTitle;
 				jwt.sign(decoded, pKey(), { expiresIn: '1 day' }, function(token) {
 					return callback(token);
 				});
 			}
 			else {
-				io.to(socket).emit('error', 'Couldn\'t create match, this is usually because the match name is already taken. Try again with a different name.');
+				io.to(socket).emit('error', { "msg": 'Couldn\'t create match, this is usually because the match name is already taken. Try again with a different name.' });
 				return callback(false);
 			}
 		});
@@ -238,7 +240,43 @@ exports.createGame = function(io, data, socket, callback) {
 
 
 
-
-
-
-
+// Function to put a user into a game
+// Variables:
+//		io: io to communicate with
+//		socket: user's socket
+//		data:
+//			.token: user's auth token
+//			.matchTitle: match to join
+//
+// No output, handles client itself
+exports.joinGame = function(io, socket, data) {
+	// Verify some shit in the shit
+	jwt.verify(data.token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Could not validate your session, please try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			// Put player into game if token checks out
+			m_mongo.joinGame(data.matchTitle, decoded.username, function (success, msg) {
+				if (success) {
+					// Send the player the new token
+					decoded.activeGame = data.matchTitle;
+					jwt.sign(decoded, pKey(), { expiresIn: '1 day' }, function(token) {
+						io.to(socket).emit('join game', {
+							"newToken": token,
+							"url": '/pregame',
+							"msg": 'Your game is ready! Redirecting you now...'
+						});
+					});
+				}
+				else {
+					// Send player an error message if shit hits the fan
+					io.to(socket).emit('error', { "msg": msg });
+				}
+			});
+		}
+	});
+};

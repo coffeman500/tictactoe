@@ -50,6 +50,33 @@ socket.on('join error', function(data) {
 });
 
 
+// Handles leaving the game
+$("#leave-button").click(function() {
+	socket.emit('leave game', localStorage['token']);
+});
+
+
+// Handles the order to leave the game from the server
+// Variables:
+//		data:
+//			.newToken: new auth token for the user
+//			.msg: message to display to user
+//			.url: url to redirect to
+//
+// Handles client directly
+socket.on('leave game', function(data) {
+	console.log('got leave game order');
+	localStorage['token'] = data.newToken;
+	$("#notification").html('<p class="success">' + data.msg + '</p>');
+	moveClient(data.url);
+});
+
+
+// Handles removal of user from users list when they leave
+socket.on('user left', function(user) {
+	$("#" + user).remove();
+});
+
 
 // Displays the connected users in the room
 // Receives one variable from the server:
@@ -105,6 +132,21 @@ socket.on('ready change', function(players) {
 		}
 	});
 });
+
+
+// Sends out request to toggle match
+$("#toggle-open").click(function() {
+	socket.emit("toggle match", localStorage['token']);
+});
+// Receives open status back
+socket.on('open status', function(status) {
+	 if (status)
+	 	status = "Open";
+	 else 
+	 	status = "Closed";
+	$("#match-status").html("Match is now: " + status);
+});
+
 
 // Handles the ready button
 $("#ready-button").click(function() {
