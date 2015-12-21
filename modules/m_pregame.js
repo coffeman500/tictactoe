@@ -22,7 +22,18 @@ exports.connect = function(io, username, activeGame, socket, callback) {
 	// Attempt to join the match
 	m_mongo.joinGame(activeGame, username, function(success, msg) {
 		if (success) {
-			return callback(true, activeGame);
+			m_mongo.returnFromDb('games', { "_id": activeGame }, function(doc) {
+				if (doc.active == true) {
+					io.to(socket).emit('game started', {
+						"msg": 'Your game has already started, sending you there now..',
+						"url": '/game'
+					});
+					return false;
+				}
+				else {
+					return callback(true, activeGame);
+				}
+			});
 		}
 		else {
 			activeGame = null;
@@ -207,3 +218,43 @@ exports.leaveGame = function(io, socket, token, lobby) {
 		}
 	});
 }
+
+
+
+// Function to handle starting a game
+// Variables:
+//		io: the pregame io to emit to
+//		socket: the user's socket
+//		token: the user's token
+//		lobby: the lobby io to emit game changes to
+//
+// No return, handles client directly
+exports.startGame = function(io, socket, token, lobby) {
+	// Start with some token verification, who saw that one coming?
+	jwt.verify(token, pKey(), function(err, decoded) {
+		if (err) {
+			io.to(socket).emit('validation error', {
+				"msg": 'Your session token is invalid. Try logging in again.',
+				"url": '/'
+			});
+		}
+		else {
+			// Get mongo to start the game
+			m_mongo.setGameStart(decoded.activeGame, decoded.username, function(success, msg) {
+				if (success) {
+					// If it worked, send a redirect order to all!
+					io.emit('game started', {
+						"msg": 'Game has been started, redirecting you..',
+						"url": '/game'
+					});
+					m_sh.getGames(lobby);
+				}
+				else {
+					// If shit hits the fan, let the user know.
+					io.to(socket).emit('error', { "msg": msg });
+					return;
+				}
+			});
+		}
+	});
+};

@@ -35,6 +35,11 @@ app.get('/pregame', function(req, res) {
 	res.sendFile(__dirname + '/html/pregame.html');
 });
 
+// Game page - WE'RE ALMOST THERE.
+app.get('/game', function(req, res) {
+	res.sendFile(__dirname + '/html/game.html');
+});
+
 
 
 // Socket handling
@@ -67,6 +72,9 @@ var lobby = io.of('/lobby').on('connection', function(socket) {
 	socket.on('lobby connect', function(token) {
 		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
 			if (activeGame != null) {
+				lobby.to(socket.id).emit('error', {
+					"msg": 'Looks like you\'re already part of a game, rejoining now..'
+				});
 				lobby.to(socket.id).emit('redirect', '/pregame');
 				return;
 			}
@@ -219,11 +227,48 @@ var pregame = io.of('/pregame').on('connection', function(socket) {
 		m_pregame.leaveGame(pregame, socket.id, token, lobby);
 	});
 
-	// TODO: Join game function and the game itself
+	
+	// Handles starting a game
+	socket.on('start game', function(token) {
+		m_pregame.startGame(pregame, socket.id, token, lobby);
+	}); // End game start handler
 
-	socket.on('disconnect', function() {
 
-	});
+	socket.on('disconnect', function() {});
 });
+
+
+
+// The actual game lobby! Wooh!
+var game = io.of('/game').on('connection', function(socket) {
+
+	socket.on('game connect', function(token) {
+		jwt.verify(token, pKey(), function(err, decoded) {
+			if (err) {
+				socket.emit('validation error', {
+					"msg": 'Couldn\'t validate your session, try logging in again.',
+					"url": '/'
+				})
+			}
+			else {
+				// If token checks out, move on to see if they're already logged in
+				if (!m_users.isConnected(username)) {
+					m_users.addConnUser(username, socket.id);
+					// Send em off to the room they belong in
+					// TODO: Finish connecting user to the lobby
+				}
+				else {
+					pregame.to(socket.id).emit('validation error', { 
+						"msg": 'It seems you\'re already logged in..',
+						"url": '/'
+					});
+				}
+			}
+		});
+	});
+
+});
+
+
 
 http.listen(3000, console.log("Listening on *:3000"));

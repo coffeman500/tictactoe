@@ -294,7 +294,7 @@ Styles for the pregame page
 	height: 572px;
 }
 
-.pregame-page #ready-button, .pregame-page #toggle-open, .pregame-page #leave-button {
+.pregame-page #ready-button, .pregame-page #toggle-open, .pregame-page #leave-button, .pregame-page #start-button {
 	text-align: center;
     padding: .75em .5em;
     background-color: green;
@@ -310,4 +310,8 @@ Styles for the pregame page
 
 .pregame-page #leave-button {
 	background-color: #650000;
+}
+
+.pregame-page #start-button {
+	background-color: #0042A5;
 }

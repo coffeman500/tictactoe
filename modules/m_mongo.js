@@ -123,13 +123,19 @@ exports.createMatch = function(matchTitle, host, callback) {
 			"numPlayers": 0,
 			"players": [],
 			"pReady": [],
-			"pMax": 2
+			"pMax": 2,
+			"pMin": 2,
+			"pOrder": [],
+			"pTurn": 0,
+			"board": [0, 0, 0, 0, 0, 0, 0, 0, 0]
 		}, function(err, result) {
 			if (err) {
+				db.close();
 				console.log(err);
 				return callback(false);
 			}
 			else {
+				db.close();
 				return callback(true);			
 			}
 		});
@@ -188,7 +194,7 @@ exports.joinGame = function(matchTitle, playerName, callback) {
 //
 // Passes success, msg through the callback when completed
 exports.removeFromGame = function(matchTitle, playerName, callback) {
-
+	// TODO: if person who left is host, get rid of the game
 	MongoClient.connect(url, function(err,db) {
 		assert.equal(null, err);
 
@@ -201,7 +207,8 @@ exports.removeFromGame = function(matchTitle, playerName, callback) {
 				// Remove some bitches from the database
 				db.collection('games').update({ "_id": matchTitle }, {
 					$inc: { "numPlayers": -1 },
-					$pull: { "players": playerName }
+					$pull: { "players": playerName },
+					$pull: { "pReady": playerName }
 				}, function(err, result) {
 					if (err) {
 						return callback(false, 'Could not update database. Try again');
@@ -326,12 +333,40 @@ exports.toggleOpen = function(game, user, callback) {
 						return callback(true, (!doc.open));
 				});
 			}
-		})
+		});
 	});
 
 };
 
 
-// TODO: Handle leave button press from clients
-// Only way they can leave is by pressing le button
-// Make sure to take them off the ready list if they're on it and leave.
+
+// Function to start a game up
+exports.setGameStart = function(game, user, callback) {
+
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": game }, function(err, doc) {
+			// Testin some shit
+			if (err || !doc)
+				return callback(false, 'Could not connect to db.. Try refreshing the page');
+			else if (user != doc.host)
+				return callback(false, 'Only the host can start a match.');
+			else if (doc.players.length != doc.pMin)
+				return callback(false, 'Not enough players to start the game.')
+			else if (doc.pReady.length != doc.players.length)
+				return callback(false, 'All players must be ready to start the game.')
+			else {
+				db.collection('games').update({ "_id": game }, {
+					$set: { "active": true, "open": false }
+				}, function(err, result) {
+					if (err)
+						return callback(false, 'Could not update database. Try again');
+					else
+						return callback(true);
+				});
+			}
+		});
+	});
+
+}

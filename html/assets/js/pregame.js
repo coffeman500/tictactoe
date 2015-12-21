@@ -134,6 +134,19 @@ socket.on('ready change', function(players) {
 });
 
 
+// Receives message from server that the game has started
+socket.on('game started', function(data) {
+	$("#notification").html('<p class="success">' + data.msg + '</p>');
+	moveClient(data.url);
+});
+
+
+// Handles starting a match
+$("#start-button").click(function() {
+	socket.emit('start game', localStorage['token']);
+});
+
+
 // Sends out request to toggle match
 $("#toggle-open").click(function() {
 	socket.emit("toggle match", localStorage['token']);
@@ -166,6 +179,13 @@ $("#ready-button").click(function() {
 $("#notification").click(function() {
 	$(this).html('');
 });
+
+
+// Handles redirection orders from server
+socket.on('redirect', function(url) {
+	moveClient(url);
+});
+
 
 // Handles redirections
 function moveClient(url) {
