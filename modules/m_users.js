@@ -9,7 +9,7 @@ var connUsers = [];
 // No Variables
 //
 // Just returns the connUsers array
-exports.getUsers = function() {
+exports.getUsersArray = function() {
 	return connUsers;
 }
 

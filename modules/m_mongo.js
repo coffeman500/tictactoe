@@ -125,7 +125,6 @@ exports.createMatch = function(matchTitle, host, callback) {
 			"pReady": [],
 			"pMax": 2,
 			"pMin": 2,
-			"pOrder": [],
 			"pTurn": 0,
 			"board": [0, 0, 0, 0, 0, 0, 0, 0, 0]
 		}, function(err, result) {
@@ -202,7 +201,7 @@ exports.removeFromGame = function(matchTitle, playerName, callback) {
 			if (err || !doc)
 				return callback(false, 'Could not connect to database, try again.');
 			else if (doc.players.indexOf(playerName) == -1)
-				return callback(false, 'YOU DON\'T EVEN GO HERE.');
+				return callback(false, '*Faint voice in the background* SHE DOESN\'T EVEN GO HERE. Redirecting you back to the lobby.');
 			else {
 				// Remove some bitches from the database
 				db.collection('games').update({ "_id": matchTitle }, {
@@ -348,24 +347,119 @@ exports.setGameStart = function(game, user, callback) {
 
 		db.collection('games').findOne({ "_id": game }, function(err, doc) {
 			// Testin some shit
-			if (err || !doc)
+			if (err || !doc) {
+				db.close();
 				return callback(false, 'Could not connect to db.. Try refreshing the page');
-			else if (user != doc.host)
+			}
+			else if (user != doc.host) {
+				db.close();
 				return callback(false, 'Only the host can start a match.');
-			else if (doc.players.length != doc.pMin)
+			}
+			else if (doc.players.length != doc.pMin) {
+				db.close();
 				return callback(false, 'Not enough players to start the game.')
-			else if (doc.pReady.length != doc.players.length)
+			}
+			else if (doc.pReady.length != doc.players.length) {
+				db.close();
 				return callback(false, 'All players must be ready to start the game.')
+			}
 			else {
+				// If alls well, initialize the game
 				db.collection('games').update({ "_id": game }, {
 					$set: { "active": true, "open": false }
 				}, function(err, result) {
-					if (err)
+					if (err) {
+						db.close();
 						return callback(false, 'Could not update database. Try again');
-					else
+					}
+					else {
+						db.close();
 						return callback(true);
+					}
 				});
 			}
+		});
+	});
+
+}
+
+
+
+// Makes a move
+// Variables:
+//		user: the user making the move
+//		game: the game to make the move on
+//		sector: the sector of the move
+//		callback: called when finished
+//
+// Returns callback with some info
+exports.setMove = function(user, game, sector, callback) {
+
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').findOne({ "_id": game }, function(err, doc) {
+			if (err || !doc) {
+				db.close();
+				return callback(false, 'Match does not exist anymore. We all have to move on sometimes..');
+			}
+			else if (doc.players[doc.pTurn] != user) {
+				db.close();
+				return callback(false, 'It\'s not your turn yet... <span class="tiny">Impatient asshole..</span>')
+			}
+			else if (doc.active != true) {
+				db.close();
+				return callback(false, 'This game is no longer active.');
+			}
+			else if (doc.board[sector] != 0){
+				db.close();
+				return callback(false, 'That move seems pretty illegal. You wouldn\'t be trying to cheat, would you?');
+			}
+			else {
+				// Setup the new board
+				doc.board[sector] = (doc.pTurn + 1);
+				originalTurn = doc.pTurn;
+				if (doc.pTurn == 1)
+					doc.pTurn = 0;
+				else 
+					doc.pTurn = 1;
+
+				// Make le move!
+				db.collection('games').update({ "_id": game }, {
+					$set: { "board": doc.board,
+							"pTurn": doc.pTurn
+					}
+				}, function(err, result) {
+					if (err) {
+						db.close();
+						return callback(false, 'Could not update database. Try again');
+					}
+					else {
+						db.close();
+						return callback(true, null, originalTurn, doc.board);
+					}
+				});
+			}
+		});
+	});
+
+};
+
+
+
+// Closes a match and deletes it from the database
+// Variables:
+//		game: the game to delete
+//
+// No return
+exports.closeMatch = function(game) {
+
+	MongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+
+		db.collection('games').deleteOne({ "_id": game }, function() {
+			db.close();
+			return;
 		});
 	});
 

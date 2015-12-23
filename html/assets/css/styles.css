@@ -5,6 +5,7 @@ General Styles
 body {
 	font-family: arial;
 	position: relative;
+	margin: 0;
 }
 
 #notification {
@@ -17,6 +18,17 @@ body {
 }
 #notification p {
 	margin: 0;
+}
+
+#container {
+	padding: 5px;
+}
+
+.small {
+	font-size: 12px;
+}
+.tiny {
+	font-size: 8px;
 }
 
 .wrap {
@@ -35,6 +47,13 @@ body {
 	background: green;
 	color: white;
 	padding: .75em;
+}
+
+.big-wrap {
+	max-width: 1240px;
+	min-width: 1240px;
+	margin: 0 auto;
+	width: 100%;
 }
 
 h1 {
@@ -294,7 +313,7 @@ Styles for the pregame page
 	height: 572px;
 }
 
-.pregame-page #ready-button, .pregame-page #toggle-open, .pregame-page #leave-button, .pregame-page #start-button {
+.pregame-page #ready-button, .pregame-page #toggle-open, .pregame-page #leave-button, .pregame-page #start-button, .game-page #leave-button {
 	text-align: center;
     padding: .75em .5em;
     background-color: green;
@@ -308,10 +327,39 @@ Styles for the pregame page
 	background-color: #315431;
 }
 
-.pregame-page #leave-button {
+.pregame-page #leave-button, .game-page #leave-button {
 	background-color: #650000;
 }
 
 .pregame-page #start-button {
 	background-color: #0042A5;
+}
+
+
+/******************
+Styles for the game page
+******************/
+
+.game-page #game-container {
+	text-align: center;
+}
+.game-page canvas {
+	cursor: pointer;
+}
+
+.game-page .pActive {
+	background-color: #FFFFD0;
+}
+.game-page .plabel {
+    padding: .25em 1em;
+    margin: 1.5em .5em;
+    text-align: center;
+}
+
+.game-page #leave-section {
+	margin-top: 3em;
+	text-align: center;
+}
+.game-page #leave-button {
+	max-width: 150px;
 }

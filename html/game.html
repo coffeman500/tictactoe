@@ -1,16 +1,38 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Tic Tac Toe Lobby</title>
+		<title>Tic Tac Toe Game</title>
 		
 		<link rel="stylesheet" type="text/css" href="/css/styles.css">
 	</head>
 
 	<body>
 		
-		<div id="container" class="wrap game-page">
-		
-			<canvas id="game" width="600" height="600"></canvas>
+		<div id="container" class="big-wrap game-page">
+
+			<div id="notification"></div>
+			
+			<div id="top-section" class="no-flow">
+				<div id="chat-section" class="col d-1of2">
+					<p>This is gonna be a chat box! :D</p>
+				</div>
+				<div id="game-container" class="col d-1of2 last-col">
+					<canvas id="game" width="600" height="600"></canvas>
+				</div>
+			</div>
+
+			<div class="no-flow" id="playerlabels">
+				<div class="col d-1of2">
+					<div id="p1label" class="plabel"></div>
+				</div>
+				<div class="col d-1of2 last-col">
+					<div id="p2label" class="plabel"></div>
+				</div>
+			</div>
+
+			<div id="leave-section">
+				<div id="leave-button">Leave Game</div>
+			</div>
 
 		</div>
 

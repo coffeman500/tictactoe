@@ -65,7 +65,6 @@ $("#leave-button").click(function() {
 //
 // Handles client directly
 socket.on('leave game', function(data) {
-	console.log('got leave game order');
 	localStorage['token'] = data.newToken;
 	$("#notification").html('<p class="success">' + data.msg + '</p>');
 	moveClient(data.url);

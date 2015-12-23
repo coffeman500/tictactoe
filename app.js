@@ -3,11 +3,14 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var jwt = require('jsonwebtoken');
 
 // Import our own modules:
 var m_sh = require('./modules/m_socket_handler');
 var m_pregame = require('./modules/m_pregame');
 var m_users = require('./modules/m_users');
+var m_game = require('./modules/m_game');
+var pKey = require('./modules/m_key.js');
 
 
 
@@ -243,6 +246,7 @@ var pregame = io.of('/pregame').on('connection', function(socket) {
 var game = io.of('/game').on('connection', function(socket) {
 
 	socket.on('game connect', function(token) {
+		// Verify a token, cause we can.
 		jwt.verify(token, pKey(), function(err, decoded) {
 			if (err) {
 				socket.emit('validation error', {
@@ -252,10 +256,11 @@ var game = io.of('/game').on('connection', function(socket) {
 			}
 			else {
 				// If token checks out, move on to see if they're already logged in
-				if (!m_users.isConnected(username)) {
-					m_users.addConnUser(username, socket.id);
+				if (!m_users.isConnected(decoded.username)) {
+					m_users.addConnUser(decoded.username, socket.id);
 					// Send em off to the room they belong in
-					// TODO: Finish connecting user to the lobby
+					socket.join(decoded.activeGame);
+					m_game.init(game, socket.id, decoded.activeGame);
 				}
 				else {
 					pregame.to(socket.id).emit('validation error', { 
@@ -265,7 +270,19 @@ var game = io.of('/game').on('connection', function(socket) {
 				}
 			}
 		});
-	});
+	}); // End of game connection
+
+
+	// Handles making a move
+	socket.on('make move', function(data) {
+		m_game.makeMove(game, socket.id, data);
+	}); // End move handler
+
+
+	// Function to handle leaving an active game
+	socket.on('leave game', function(token) {
+		m_game.leaveActiveGame(game, socket.id, token);
+	}); // End active game leaver
 
 });
 
