@@ -3,289 +3,351 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var jwt = require('jsonwebtoken');
-
-// Import our own modules:
-var m_sh = require('./modules/m_socket_handler');
-var m_pregame = require('./modules/m_pregame');
-var m_users = require('./modules/m_users');
-var m_game = require('./modules/m_game');
-var pKey = require('./modules/m_key.js');
-
-
 
 // Routing
 app.use(express.static(__dirname + '/html/assets'));
 
 // Home page, server login page
 app.get('/', function(req, res) {
-	res.sendFile(__dirname + '/html/login.html');
+	res.sendFile(__dirname + '/html/index.html');
 
 });
 
-// Registration page
-app.get('/register', function(req, res) {
-	res.sendFile(__dirname + '/html/register.html');
-});
+var renderLoop;
+var pNum = 0;
+var starLoc = []; 
+var board = [[null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+			 [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]];
 
-// Lobby page
-app.get('/lobby', function(req, res) {
-	res.sendFile(__dirname + '/html/lobby.html');
-});
+var p1 = {
+	socket: null,
+	color: "black",
+	snake: [[3, 6], [3, 5], [3, 4]],
+	direction: "down",
+	grow: false,
+	dead: false
+};
 
-// Pregame lobby page
-app.get('/pregame', function(req, res) {
-	res.sendFile(__dirname + '/html/pregame.html');
-});
+var p2 = {
+	socket: null,
+	color: "green",
+	snake: [[6, 6], [6, 5], [6, 4]],
+	direction: "down",
+	grow: false,
+	dead: false
+};
 
-// Game page - WE'RE ALMOST THERE.
-app.get('/game', function(req, res) {
-	res.sendFile(__dirname + '/html/game.html');
-});
+var p3 = {
+	socket: null,
+	color: "gray",
+	snake: [[9, 6], [9, 5], [9, 4]],
+	direction: "down",
+	grow: false,
+	dead: false
+};
 
 
 
 // Socket handling
-io.on('connection', function(socket) {
-	// Controls login attempts
-	socket.on('login', function(data) {
-		if (!m_users.isConnected(data.username))
-			m_sh.login(io, data);
-		else 
-			io.to(data.socket).emit('error', 'It seems you\'re already connected..');
-	}); // End login handler	
+var lobby = io.on('connection', function(socket) {
+	console.log(socket.id + " connected..");
+	pNum++;
+	if (p1.socket == null) {
+		console.log("Player 1 assigned.");
+		p1.socket = socket.id;
+		socket.emit("player", 1);
+	} else if (p2.socket == null) {
+		console.log("Player 2 assigned.");
+		p2.socket = socket.id;
+		socket.emit("player", 2);
+	} else if (p3.socket == null) {
+		console.log("Player 3 assigned.");
+		p3.socket = socket.id;
+		socket.emit("player", 3);
+	} else {
+		socket.emit("error", "Game is full.");
+	}
 	
-	
-	// Controls account creation
-	socket.on('create account', function(data) {
-		m_sh.createAccount(io, data);
-	}); // End account creation handler
-	
-	socket.on('disconnect', function() {
-		m_users.removeConnUser(socket.id);
+	// Handle directional input
+	socket.on("change direction", function(dir) {
+		if (socket.id == p1.socket) {
+			if (checkDir(dir, p1.direction))
+				p1.direction = dir;
+		} else if (socket.id == p2.socket) {
+			if (checkDir(dir, p2.direction))
+				p2.direction = dir;
+		} else if (socket.id == p3.socket) {
+			if (checkDir(dir, p3.direction))
+				p3.direction = dir;
+		}
+	});
+
+	socket.on("start", function() {
+		startGame();
+	});
+
+	socket.on("disconnect", function() {
+		if (socket.id == p1.socket) {
+			p1.socket = null;
+		} else if (socket.id == p2.socket) {
+			p2.socket = null;
+		} else if (socket.id == p3.socket) {
+			p3.socket = null;
+		}
 	});
 }); // End connection handler
 
+function startGame() {
+	iniBoard();
+	clearInterval(renderLoop);
+	renderLoop = setInterval(function() {
+		render();
+	}, 200);
+}
+function stopGame() {}
 
+function render() {
 
-// Lobby room
-var lobby = io.of('/lobby').on('connection', function(socket) {
+	// Handle movement of first player
+	if (p1.socket != null && p1.dead == false) {
 
-	// Handles token verification from a connecting user
-	socket.on('lobby connect', function(token) {
-		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
-			if (activeGame != null) {
-				lobby.to(socket.id).emit('error', {
-					"msg": 'Looks like you\'re already part of a game, rejoining now..'
-				});
-				lobby.to(socket.id).emit('redirect', '/pregame');
-				return;
-			}
-			if (!m_users.isConnected(username)) {
-				m_users.addConnUser(username, socket.id);
-				lobby.emit('users change', m_users.getUsers(lobby));
-			}
-			else {
-				lobby.to(socket.id).emit('validation error', { 
-					"msg": 'It seems you\'re already logged in..',
-					"url": '/'
-				});
-			}
-		});
-	}); // End token verification handler
+		// Move all the blocks forward one.
+		var tempX = p1.snake[0][0];
+			tempY = p1.snake[0][1];
 
-	
-	// Sends out game list to everyone periodically, and individually by request
-	socket.on('get games', function(socket) {
-		m_sh.getGames(lobby, socket);
-	}); // End list open games handler
-	
-	
-	// Handles chat messages
-	socket.on('chat message', function(data) {
-		m_sh.chat(lobby, data, socket.id);
-	}); // End chat message handler
+		// Move the head first
+		// Find out which location we're going to
+		if (p1.direction == "down") {
+			p1.snake[0][1]++;
+		} else if (p1.direction == "left") {
+			p1.snake[0][0]--;
+		} else if (p1.direction == "up") {
+			p1.snake[0][1]--;
+		} else {
+			p1.snake[0][0]++;
+		}
 
+		if (p1.snake[0][0] < 0 || p1.snake[0][0] >= board.length || p1.snake[0][1] < 0 || p1.snake[0][1] >= board.length || board[p1.snake[0][0]][p1.snake[0][1]] != null) {
+			p1.dead = true;
+			p1.snake[0][0] = tempX;
+			p1.snake[0][1] = tempY;
+			destroySnake(p1.snake);
+		} else {
+			board[p1.snake[0][0]][p1.snake[0][1]] = p1.color;
+		
+			// Loop through da booty
+			for (var i = 1; i < p1.snake.length; i++) {
+				var locTempX = p1.snake[i][0],
+					locTempY = p1.snake[i][1];
 
-	// Handles join game requests
-	socket.on('join game', function(data) {
-		m_sh.joinGame(lobby, socket.id, data);
-	});
-	
-	
-	// Handles game hosting requests
-	socket.on('host game', function(data) {
-		m_sh.createGame(lobby, data, socket.id, function(token) {
-			if (token) {
-				lobby.to(socket.id).emit('hosted ready', {
-					"newToken": token,
-					"url": '/pregame',
-					"msg": 'Your game is ready! Redirecting you now...'
-				});
-			}
-		});
-	});
-	
-	// TODO: Join functionality from the lobby page
+				p1.snake[i][0] = tempX;
+				p1.snake[i][1] = tempY;
 
-	socket.on('disconnect', function() {
-		// Tell everyone else someone left. Sad sad tears tears.
-		lobby.emit('users change', m_users.getUsers(lobby));
-	});
-}); // End lobby connection handler
+				board[tempX][tempY] = p1.color;
 
+				tempX = locTempX;
+				tempY = locTempY;
 
-
-// This is the pregame lobby
-var pregame = io.of('/pregame').on('connection', function(socket) {
-
-	// Handles pregame connection
-	socket.on('pregame connect', function(token) {
-		m_sh.verifyToken(lobby, token, socket.id, function(username, activeGame) {
-			if (!m_users.isConnected(username)) {
-				m_users.addConnUser(username, socket.id);
-				// Send em off to the room they belong in
-				m_pregame.connect(pregame, username, activeGame, socket.id, function(success, room) {
-					if (success) {
-						socket.join(room);
-						// Send out connected users list
-						pregame.to(room).emit('users change', m_users.getUsers(pregame, room));
-						// Send out ready users list
-						m_pregame.getReadyPlayers(room, function(players) {
-							pregame.to(room).emit('ready change', players);
-						});
-					}
-				});
-			}
-			else {
-				pregame.to(socket.id).emit('validation error', { 
-					"msg": 'It seems you\'re already logged in..',
-					"url": '/'
-				});
-			}
-		});
-	}); // End connection handler
-
-
-	// Handles chat messages
-	socket.on('chat message', function(data) {
-		m_sh.chat(pregame, data, socket.id);
-	}); // End chat message handler
-
-
-	// Handles ready requests
-	socket.on('ready player', function(token) {
-		m_pregame.readyPlayer(pregame, socket.id, token, function(success, msg, activeGame) {
-			if (success) {
-				m_pregame.getReadyPlayers(activeGame, function(players) {
-					pregame.to(activeGame).emit('ready change', players);
-				});
-			}
-			else {
-				pregame.to(socket.id).emit('error', { "msg": msg });
-			}
-		});
-	}); // End ready handler
-
-
-	// Handles unready requests
-	socket.on('unready player', function(token) {
-		m_pregame.unreadyPlayer(pregame, socket.id, token, function(success, msg, activeGame) {
-			if (success) {
-				m_pregame.getReadyPlayers(activeGame, function(players) {
-					pregame.to(activeGame).emit('ready change', players);
-				});
-			}
-			else {
-				pregame.to(socket.id).emit('error', { "msg": msg });
-			}
-		});
-	}); // End unready handler
-
-
-	// Handles returning the list of ready players
-	socket.on('get readys', function(token) {
-		jwt.verify(token, pKey(), function(err, decoded) {
-			if (err) {
-				lobby.to(socket).emit('validation error', {
-					"msg": 'Your session token is invalid, try logging in again.',
-					"url": '/'
-				});
-			}
-			else {
-				pregame.to(socket.id).emit('ready change', m_pregame.getReadyPlayers(decoded.activeGame));
-			}
-		});
-	}); // End handler of returning users
-
-
-	// Handles toggling a match open and closed
-	socket.on('toggle match', function(token) {
-		m_pregame.toggleMatchOpen(pregame, socket.id, token, lobby);
-	}); // Finish match toggling opener thing
-
-
-	// Handles leaving the game lobby
-	socket.on('leave game', function(token) {
-		m_pregame.leaveGame(pregame, socket.id, token, lobby);
-	});
-
-	
-	// Handles starting a game
-	socket.on('start game', function(token) {
-		m_pregame.startGame(pregame, socket.id, token, lobby);
-	}); // End game start handler
-
-
-	socket.on('disconnect', function() {});
-});
-
-
-
-// The actual game lobby! Wooh!
-var game = io.of('/game').on('connection', function(socket) {
-
-	socket.on('game connect', function(token) {
-		// Verify a token, cause we can.
-		jwt.verify(token, pKey(), function(err, decoded) {
-			if (err) {
-				socket.emit('validation error', {
-					"msg": 'Couldn\'t validate your session, try logging in again.',
-					"url": '/'
-				})
-			}
-			else {
-				// If token checks out, move on to see if they're already logged in
-				if (!m_users.isConnected(decoded.username)) {
-					m_users.addConnUser(decoded.username, socket.id);
-					// Send em off to the room they belong in
-					socket.join(decoded.activeGame);
-					m_game.init(game, socket.id, decoded.activeGame);
+				if (i == (p1.snake.length - 1) && p1.grow == false) {
+					board[tempX][tempY] = null;
+				} // Delete the last link if it's not time to grow
+				else if (i == (p1.snake.length - 1) && p1.grow == true) {
+					p1.grow = false;
+					p1.snake.push([tempX, tempY]);
+					console.log(p1.snake);
 				}
-				else {
-					pregame.to(socket.id).emit('validation error', { 
-						"msg": 'It seems you\'re already logged in..',
-						"url": '/'
-					});
-				}
-			}
-		});
-	}); // End of game connection
+			} // Done loopin through dat booty
+
+		}
+
+	} // End p1 snek update loop
 
 
-	// Handles making a move
-	socket.on('make move', function(data) {
-		m_game.makeMove(game, socket.id, data);
-	}); // End move handler
+	// Handle movement of second player
+	if (p2.socket != null && p2.dead == false) {
+
+		// Move all the blocks forward one.
+		var tempX = p2.snake[0][0];
+			tempY = p2.snake[0][1];
+
+		// Move the head first
+		// Find out which location we're going to
+		if (p2.direction == "down") {
+			p2.snake[0][1]++;
+		} else if (p2.direction == "left") {
+			p2.snake[0][0]--;
+		} else if (p2.direction == "up") {
+			p2.snake[0][1]--;
+		} else {
+			p2.snake[0][0]++;
+		}
+
+		if (p2.snake[0][0] < 0 || p2.snake[0][0] >= board.length || p2.snake[0][1] < 0 || p2.snake[0][1] >= board.length || board[p2.snake[0][0]][p2.snake[0][1]] != null) {
+			p2.dead = true;
+			p2.snake[0][0] = tempX;
+			p2.snake[0][1] = tempY;
+			destroySnake(p2.snake);
+		} else {
+			board[p2.snake[0][0]][p2.snake[0][1]] = p2.color;
+		
+			// Loop through da booty
+			for (var i = 1; i < p2.snake.length; i++) {
+				var locTempX = p2.snake[i][0],
+					locTempY = p2.snake[i][1];
+
+				p2.snake[i][0] = tempX;
+				p2.snake[i][1] = tempY;
+
+				board[tempX][tempY] = p2.color;
+
+				tempX = locTempX;
+				tempY = locTempY;
+
+				if (i == (p2.snake.length - 1) && p2.grow == false) {
+					board[tempX][tempY] = null;
+				} // Delete the last link if it's not time to grow
+			} // Done loopin through dat booty
+		}
+	} // End p2 snek update loop
 
 
-	// Function to handle leaving an active game
-	socket.on('leave game', function(token) {
-		m_game.leaveActiveGame(game, socket.id, token);
-	}); // End active game leaver
+	// Handle movement of third player
+	if (p3.socket != null && p3.dead == false) {
 
-});
+		// Move all the blocks forward one.
+		var tempX = p3.snake[0][0];
+			tempY = p3.snake[0][1];
+
+		// Move the head first
+		// Find out which location we're going to
+		if (p3.direction == "down") {
+			p3.snake[0][1]++;
+		} else if (p3.direction == "left") {
+			p3.snake[0][0]--;
+		} else if (p3.direction == "up") {
+			p3.snake[0][1]--;
+		} else {
+			p3.snake[0][0]++;
+		}
+
+		if (p3.snake[0][0] < 0 || p3.snake[0][0] >= board.length || p3.snake[0][1] < 0 || p3.snake[0][1] >= board.length || board[p3.snake[0][0]][p3.snake[0][1]] != null) {
+			p3.dead = true;
+			p3.snake[0][0] = tempX;
+			p3.snake[0][1] = tempY;
+			destroySnake(p3.snake);
+		} else {
+			board[p3.snake[0][0]][p3.snake[0][1]] = p3.color;
+		
+			// Loop through da booty
+			for (var i = 1; i < p3.snake.length; i++) {
+				var locTempX = p3.snake[i][0],
+					locTempY = p3.snake[i][1];
+
+				p3.snake[i][0] = tempX;
+				p3.snake[i][1] = tempY;
+
+				board[tempX][tempY] = p3.color;
+
+				tempX = locTempX;
+				tempY = locTempY;
+
+				if (i == (p3.snake.length - 1) && p3.grow == false) {
+					board[tempX][tempY] = null;
+				} // Delete the last link if it's not time to grow
+			} // Done loopin through dat booty
+		}
+	} // End p3 snek update loop
+
+	// Check for le starzors.
+	var locChk = board[starLoc[0]][starLoc[1]];
+	if (locChk != null) {
+		if (locChk == p1.color) {
+			p1.grow = true;
+		}
+		else if (locChk == p2.color) {
+			p2.grow = true;
+		}
+		else if (locChk == p3.color) {
+			p3.grow = true;
+		}
+
+		genStar();
+	}
+
+	lobby.emit("render", [board, starLoc]);
+} // End renderloop
+
+// Function to destroy a motherfucker.
+function destroySnake(arr) {
+	for (var i = 0; i < arr.length; i++) {
+		board[arr[i][0]][arr[i][1]] = null;
+	}
+} // End motherfucking destruction
+
+
+// No backtracking, backtracking is for h4xorz
+function checkDir(newD, oldD) {
+	if ((newD == "down" && oldD == "up") || (newD == "up" && oldD == "down")) {
+		return false;
+	} else if ((newD == "left" && oldD == "right") || (newD == "right" && oldD == "left")) {
+		return false;
+	} else {
+		return true;
+	}
+
+} // Done checking for h4xzors...
+
+
+// Ini dat board.
+function iniBoard() {
+
+	// Set up sneks...
+	if (p1.socket != null) {
+		for (var i = 0; i < p1.snake.length; i++) {
+			board[p1.snake[i][0]][p1.snake[i][1]] = p1.color;
+		}
+	}
+	if (p2.socket != null) {
+		for (var i = 0; i < p2.snake.length; i++) {
+			board[p2.snake[i][0]][p2.snake[i][1]] = p2.color;
+		}
+	}
+	if (p3.socket != null) {
+		for (var i = 0; i < p3.snake.length; i++) {
+			board[p3.snake[i][0]][p3.snake[i][1]] = p3.color;
+		}
+	}
+
+	// Give em something to fight over..
+	genStar();
+
+} // End board ini
+
+
+// Get a star in a motherfucker.
+function genStar() {
+	starLoc[0] = Math.floor(Math.random() * 10);
+	starLoc[1] = Math.floor(Math.random() * 10);
+} // No more motherfucking stars motherfucker.
 
 
 
-http.listen(3000, console.log("Listening on *:3000"));
+http.listen(3001, console.log("Listening on *:3001"));
